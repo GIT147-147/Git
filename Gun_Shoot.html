@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gun Shooting Game - Premium</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #3a3d40 0%, #181a1b 100%);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+        }
+
+        /* උඩින්ම පෙනෙන මාතෘකාව (Header Title) */
+        .game-title {
+            margin-top: 25px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.4), 0 4px 10px rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 8px;
+            z-index: 20;
+        }
+
+        /* ප්‍රධාන ක්‍රීඩා ප්‍රදේශය */
+        .main-game-area {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        /* වම් පැත්තේ මැදට තුවක්කුව සහ බටන් එක එකට තබන Container එක */
+        .gun-container {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        /* GIF Wrapper සහ Crop/Blend කිරීම */
+        .gif-wrapper {
+            width: 260px;
+            max-width: 40vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            clip-path: inset(5% 5% 5% 5%);
+            mix-blend-mode: screen; /* GIF එකේ පසුබිම කැපී පෙනීම වැළැක්වීමට */
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
+        }
+
+        .gun-gif {
+            width: 100%;
+            height: auto;
+            transform: scaleX(-1); 
+            display: block;
+        }
+
+        /* Premium Shoot Button එක */
+        .shoot-btn {
+            padding: 14px 40px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #ffffff;
+            background: linear-gradient(135deg, #1f1f1f, #000000);
+            border: 2px solid #ffffff;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .shoot-btn:hover {
+            background: linear-gradient(135deg, #333333, #111111);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .shoot-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* දකුණු පැත්තේ Target Crosshair Container එක */
+        .target-container {
+            position: absolute;
+            right: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        /* Aim (Crosshair) එක සහ මැද ඇති ඩොට් එක */
+        .target-crosshair {
+            position: absolute;
+            width: 42px;
+            height: 42px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.8), inset 0 0 6px rgba(255, 255, 255, 0.4);
+            z-index: 6;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .target-crosshair::before,
+        .target-crosshair::after {
+            content: '';
+            position: absolute;
+            background-color: #ffffff;
+        }
+
+        .target-crosshair::before {
+            top: -8px;
+            bottom: -8px;
+            left: 50%;
+            width: 2px;
+            transform: translateX(-50%);
+        }
+
+        .target-crosshair::after {
+            left: -8px;
+            right: -8px;
+            top: 50%;
+            height: 2px;
+            transform: translateY(-50%);
+        }
+
+        /* Aim Dot */
+        .aim-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ffffff;
+            z-index: 8;
+        }
+
+        /* Premium Target Balls */
+        .target-ball {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #4a4a4a, #0f0f0f);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 5px 12px rgba(0, 0, 0, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+            border: 2px solid #ffffff;
+        }
+
+        /* Flash Effect */
+        .hit-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(180, 180, 180, 0.8) 40%, rgba(0, 0, 0, 0) 70%);
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.2);
+            transition: transform 0.1s ease-out, opacity 0.15s ease-out;
+            pointer-events: none;
+            z-index: 7;
+        }
+
+        .hit-effect.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.4);
+        }
+
+        /* Popup Modal */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(6px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .popup-overlay.show {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .popup-box {
+            background: linear-gradient(145deg, #1c1d1f, #0b0c0d);
+            padding: 35px 50px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            color: #ffffff;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+        }
+
+        .popup-box h2 {
+            margin-bottom: 12px;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .popup-box p {
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            color: #d4af37;
+            font-weight: 600;
+        }
+
+        .retry-btn {
+            padding: 12px 32px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: #000000;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .retry-btn:hover {
+            background-color: #e0e0e0;
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 600px) {
+            .game-title {
+                font-size: 1.5rem;
+                margin-top: 15px;
+            }
+            .gif-wrapper {
+                width: 170px;
+            }
+            .shoot-btn {
+                padding: 10px 24px;
+                font-size: 0.95rem;
+            }
+            .target-container {
+                right: 15px;
+                width: 200px;
+                height: 200px;
+            }
+            .target-crosshair {
+                width: 32px;
+                height: 32px;
+            }
+            .target-ball {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- උඩින්ම පෙනෙන මාතෘකාව -->
+    <h1 class="game-title">Gun Shooting Game</h1>
+
+    <div class="main-game-area">
+        <!-- තුවක්කුව සහ බටන් එක -->
+        <div class="gun-container">
+            <div class="gif-wrapper">
+                <img id="gun" class="gun-gif" src="Gun.gif" alt="Gun Animation">
+            </div>
+            <button class="shoot-btn" id="shootBtn" onclick="shootGun()">Shoot</button>
+        </div>
+
+        <!-- දකුණු පැත්තේ Target Container -->
+        <div class="target-container" id="targetArea">
+            <div class="target-crosshair">
+                <div class="aim-dot"></div>
+            </div>
+            <div id="hitEffect" class="hit-effect"></div>
+        </div>
+    </div>
+
+    <!-- Popup Modal -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup-box">
+            <h2 id="popupMessage">වෙඩි වැදුණි!</h2>
+            <p id="giftMessage"></p>
+            <button class="retry-btn" onclick="location.reload()">Retry</button>
+        </div>
+    </div>
+
+    <!-- Audio File -->
+    <audio id="gunSound" src="Gun_Shoot.mp3" preload="auto"></audio>
+
+    <script>
+        const gunImg = document.getElementById('gun');
+        const hitEffect = document.getElementById('hitEffect');
+        const gunSound = document.getElementById('gunSound');
+        const targetArea = document.getElementById('targetArea');
+        const popupOverlay = document.getElementById('popupOverlay');
+        const popupMessage = document.getElementById('popupMessage');
+        const giftMessage = document.getElementById('giftMessage');
+        const shootBtn = document.getElementById('shootBtn');
+        const gifSrc = "Gun.gif";
+        
+        const balls = [];
+        let forcedTarget = null;
+
+        // තෑගි Hardcode කිරීම
+        const specialGifts = {
+            1: "තෑග්ගක් නොමැත!",
+            2: "තෑග්ගක් දිනාගත්තා: පෑනක් 🖊️ ",
+            3: "තෑග්ගක් නොමැත!",
+            4: "තෑග්ගක් නොමැත!",
+            5: "මෙම ඉලක්කය සඳහා තෑගි නොමැත!",
+            6: "සුපිරි තෑග්ගක් දිනාගත්තා: ටොෆියක් 🍬 ",
+            7: "තෑග්ගක් නොමැත!",
+            8: "මෙම ඉලක්කය සඳහා තෑගි නොමැත!",
+            9: "සුපිරි තෑග්ගක් දිනාගත්තා: බ්‍රේස්වල්ට් 📿 ",
+            10: "නොමිලේම නැවත උත්සහ කරන්න. 🔄 "
+        };
+
+        function createTargetBalls() {
+            for (let i = 1; i <= 10; i++) {
+                const ball = document.createElement('div');
+                ball.className = 'target-ball';
+                ball.innerText = i;
+                ball.dataset.number = i;
+
+                if (i === 5 || i === 8) {
+                    ball.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
+                } else if ([1, 3, 4, 7].includes(i)) {
+                    ball.style.transition = 'transform 1.6s cubic-bezier(0.25, 1, 0.5, 1)';
+                } else {
+                    ball.style.transition = 'transform 0.9s cubic-bezier(0.25, 1, 0.5, 1)';
+                }
+
+                targetArea.appendChild(ball);
+                balls.push(ball);
+            }
+            moveBalls();
+        }
+
+        function moveBalls() {
+            const areaWidth = targetArea.clientWidth - 40;
+            const areaHeight = targetArea.clientHeight - 40;
+
+            balls.forEach(ball => {
+                const ballNum = parseInt(ball.dataset.number);
+                let randomX, randomY;
+
+                if (ballNum === 5 || ballNum === 8) {
+                    randomX = (Math.random() - 0.5) * areaWidth * 1.2;
+                    randomY = (Math.random() - 0.5) * areaHeight * 1.2;
+                } else if ([1, 3, 4, 7].includes(ballNum)) {
+                    randomX = (Math.random() - 0.5) * (areaWidth * 0.45);
+                    randomY = (Math.random() - 0.5) * (areaHeight * 0.45);
+                } else {
+                    randomX = (Math.random() - 0.5) * (areaWidth * 0.8);
+                    randomY = (Math.random() - 0.5) * (areaHeight * 0.8);
+                }
+
+                ball.style.transform = `translate(${randomX}px, ${randomY}px)`;
+            });
+        }
+
+        let ballInterval = setInterval(moveBalls, 900);
+
+        window.onload = () => {
+            stopGif();
+            createTargetBalls();
+        };
+
+        // 🎹 Keyboard Shortcut logic (Ctrl + අංකය සහ Enter key)
+        window.addEventListener('keydown', (e) => {
+            // Enter key එක එබූ විට Shoot බටන් එක Trigger වීම
+            if (e.key === 'Enter') {
+                if (!shootBtn.disabled) {
+                    shootGun();
+                }
+            }
+
+            // Secret Shortcut: Ctrl + (1 සිට 10 දක්වා ඕනෑම අංකයක්)
+            if (e.ctrlKey) {
+                let num = null;
+                if (e.key >= '1' && e.key <= '9') {
+                    num = parseInt(e.key);
+                } else if (e.key === '0') {
+                    num = 10;
+                }
+
+                if (num !== null) {
+                    forcedTarget = num; // Ctrl එක සමඟ දුන් අංකය තෝරා ගනී
+                }
+            }
+        });
+
+        function shootGun() {
+            shootBtn.disabled = true;
+
+            gunImg.src = gifSrc + '?t=' + new Date().getTime();
+            gunSound.currentTime = 0;
+            gunSound.play().catch(() => {});
+
+            setTimeout(checkHit, 200);
+
+            setTimeout(() => {
+                stopGif();
+            }, 1000);
+        }
+
+        function checkHit() {
+            let targetedBall = null;
+
+            // Ctrl shortcut එකෙන් අංකයක් සෙට් කර ඇත්නම් එය තෝරා ගනී
+            if (forcedTarget !== null) {
+                targetedBall = balls.find(b => parseInt(b.dataset.number) === forcedTarget);
+            }
+
+            if (!targetedBall) {
+                let minDistance = Infinity;
+                balls.forEach(ball => {
+                    const transform = window.getComputedStyle(ball).transform;
+                    if (transform !== 'none') {
+                        const matrix = new DOMMatrix(transform);
+                        const distance = Math.hypot(matrix.m41, matrix.m42);
+                        if (distance < 22 && distance < minDistance) {
+                            minDistance = distance;
+                            targetedBall = ball;
+                        }
+                    }
+                });
+            }
+
+            if (!targetedBall) {
+                let minDistance = Infinity;
+                balls.forEach(ball => {
+                    const transform = window.getComputedStyle(ball).transform;
+                    if (transform !== 'none') {
+                        const matrix = new DOMMatrix(transform);
+                        const distance = Math.hypot(matrix.m41, matrix.m42);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            targetedBall = ball;
+                        }
+                    }
+                });
+            }
+
+            const ballNum = parseInt(targetedBall.dataset.number);
+            let willHit = false;
+
+            // Ctrl Shortcut එක යොදා ඇත්නම්, ඕනෑම අංකයකට (1-10 දක්වා සියල්ලටම) අනිවාර්යයෙන්ම වෙඩි වදී
+            if (forcedTarget !== null) {
+                willHit = true; 
+            } else {
+                if (ballNum === 5 || ballNum === 8) {
+                    willHit = false; 
+                } else if ([1, 3, 4, 7].includes(ballNum)) {
+                    willHit = Math.random() < 0.90; 
+                } else if ([2, 6, 9, 10].includes(ballNum)) {
+                    willHit = Math.random() < 0.50;
+                }
+            }
+
+            hitEffect.classList.add('active');
+
+            setTimeout(() => {
+                hitEffect.classList.remove('active');
+            }, 180);
+
+            clearInterval(ballInterval);
+
+            setTimeout(() => {
+                balls.forEach(ball => {
+                    ball.style.display = 'none';
+                });
+
+                if (willHit) {
+                    popupMessage.innerText = `ඉලක්කය අංක ${ballNum} වෙත වෙඩි වැදුණි! 🎉`;
+                    
+                    if (specialGifts[ballNum]) {
+                        giftMessage.innerText = specialGifts[ballNum];
+                    } else {
+                        giftMessage.innerText = "මෙම ඉලක්කය සඳහා තෑගි නොමැත!";
+                    }
+                } else {
+                    popupMessage.innerText = `වෙඩි පහර මගහැරුණි! ❌`;
+                    giftMessage.innerText = "නැවත උත්සාහ කරන්න!";
+                }
+
+                popupOverlay.classList.add('show');
+            }, 400);
+        }
+
+        function stopGif() {
+            const canvas = document.createElement('canvas');
+            canvas.width = gunImg.naturalWidth || 300;
+            canvas.height = gunImg.naturalHeight || 150;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(gunImg, 0, 0, canvas.width, canvas.height);
+            gunImg.src = canvas.toDataURL();
+        }
+    </script>
+
+</body>
+</html>

@@ -70,7 +70,8 @@
         }
 
         .gif-wrapper {
-            width: clamp(160px, 22vw, 360px);
+            /* මෙහි ප්‍රමාණය තවත් විශාල කරන ලදී */
+            width: clamp(260px, 35vw, 500px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -430,7 +431,15 @@
             gunSound.load();
         });
 
+        // Keydown event එක (Enter key එක සහ Ctrl + අංක සඳහා)
         window.addEventListener('keydown', (e) => {
+            // Enter key එක එබූ විට වෙඩි තැබීමට (බටන් එක disable වී නොමැති නම් පමණි)
+            if (e.key === 'Enter') {
+                if (!shootBtn.disabled && !popupOverlay.classList.contains('show')) {
+                    shootGun();
+                }
+            }
+
             if (e.ctrlKey) {
                 let num = null;
                 if (e.key >= '1' && e.key <= '9') {
